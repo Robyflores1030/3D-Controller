@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DualShock 4 Customizer</title>
+<style>
+body { margin: 0; overflow: hidden; font-family: sans-serif; }
+#ui { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; }
+#ui label { display: block; margin-top: 5px; }
+</style>
+</head>
+<body>
+<div id="ui">
+<label>Shell: <input type="color" id="shellColor" value="#555555"></label>
+<label>Button A: <input type="color" id="buttonAColor" value="#ff0000"></label>
+<label>Button B: <input type="color" id="buttonBColor" value="#00ff00"></label>
+<label>Button X: <input type="color" id="buttonXColor" value="#0000ff"></label>
+<label>Button Y: <input type="color" id="buttonYColor" value="#ffff00"></label>
+<label>Trigger L: <input type="color" id="triggerLColor" value="#0000ff"></label>
+<label>Trigger R: <input type="color" id="triggerRColor" value="#ff00ff"></label>
+</div>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js";
+
+// Scene
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Lights
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(10,10,10);
+scene.add(dirLight);
+scene.add(new THREE.AmbientLight(0x404040));
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+
+// Load GLB
+const loader = new GLTFLoader();
+let controller;
+let parts = {};
+
+loader.load('https://github.com/Robyflores1030/3D-Controller/raw/refs/heads/main/dualshock_4_playstation_controller.glb', (gltf) => {
+controller = gltf.scene;
+scene.add(controller);
+
+// Store parts by name for easy color updates
+const names = ['Shell_Material','Button_A_Material','Button_B_Material','Button_X_Material','Button_Y_Material','Trigger_L_Material','Trigger_R_Material'];
+names.forEach(name => {
+const obj = controller.getObjectByName(name);
+if(obj) parts[name] = obj.material;
+});
+
+// Initial colors
+parts['Shell_Material']?.color.set(document.getElementById('shellColor').value);
+parts['Button_A_Material']?.color.set(document.getElementById('buttonAColor').value);
+parts['Button_B_Material']?.color.set(document.getElementById('buttonBColor').value);
+parts['Button_X_Material']?.color.set(document.getElementById('buttonXColor').value);
+parts['Button_Y_Material']?.color.set(document.getElementById('buttonYColor').value);
+parts['Trigger_L_Material']?.color.set(document.getElementById('triggerLColor').value);
+parts['Trigger_R_Material']?.color.set(document.getElementById('triggerRColor').value);
+});
+
+// Update colors when inputs change
+['shellColor','buttonAColor','buttonBColor','buttonXColor','buttonYColor','triggerLColor','triggerRColor'].forEach(id => {
+document.getElementById(id).addEventListener('input', (e)=>{
+const nameMap = {
+'shellColor':'Shell_Material',
+'buttonAColor':'Button_A_Material',
+'buttonBColor':'Button_B_Material',
+'buttonXColor':'Button_X_Material',
+'buttonYColor':'Button_Y_Material',
+'triggerLColor':'Trigger_L_Material',
+'triggerRColor':'Trigger_R_Material'
+};
+const part = parts[nameMap[id]];
+if(part) part.color.set(e.target.value);
+});
+});
+
+// Animate
+function animate(){
+requestAnimationFrame(animate);
+renderer.render(scene,camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize', ()=>{
+camera.aspect = window.innerWidth/window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
